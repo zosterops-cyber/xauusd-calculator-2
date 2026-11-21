@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101820">
+<link rel="manifest" href="manifest.json">
 <title>XAUUSD Lot & Risk Calculator</title>
 <style>
 :root{color-scheme:dark;--bg:#101820;--card:#17232d;--line:#2c3b47;--green:#22c55e;--muted:#9aaab7;--text:#f4f7fa;--red:#fb7185}
@@ -82,5 +83,14 @@ $('calc').addEventListener('click',calculate);
 $('reset').addEventListener('click',()=>{ $('balance').value='1000';$('side').value='BUY';$('entry').value='';$('sl').value='';$('tp').value='';$('risk').value='0.5';['slp','tpp','lot','riskmoney','nettsl','netttp','rr'].forEach(id=>$(id).textContent='—');$('warning').style.display='none';});
 ids.forEach(id=>$(id).addEventListener('input',()=>{if($('entry').value&&$('sl').value&&$('tp').value)calculate()}));
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+</script>
+
 </body>
 </html>
