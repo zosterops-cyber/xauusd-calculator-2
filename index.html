@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101820">
+<title>XAUUSD Lot & Risk Calculator</title>
+<style>
+:root{color-scheme:dark;--bg:#101820;--card:#17232d;--line:#2c3b47;--green:#22c55e;--muted:#9aaab7;--text:#f4f7fa;--red:#fb7185}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:600px;margin:auto;padding:18px 14px 34px}.top{padding:10px 4px 18px}.top h1{font-size:23px;margin:0 0 5px}.top p{margin:0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+input,select{width:100%;border:1px solid var(--line);background:#0f1820;color:var(--text);padding:13px 11px;border-radius:10px;font-size:16px;outline:none}
+input:focus,select:focus{border-color:var(--green)}
+.full{grid-column:1/-1}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.result{background:#0f1820;border:1px solid var(--line);padding:13px;border-radius:12px;min-width:0}
+.result .label{color:var(--muted);font-size:12px}.result .value{font-size:21px;font-weight:700;margin-top:5px;overflow-wrap:anywhere}
+.green{color:var(--green)}.red{color:var(--red)}
+button{border:0;border-radius:11px;padding:14px 16px;background:var(--green);color:#07130b;font-size:16px;font-weight:700;width:100%;cursor:pointer}
+.secondary{background:#263746;color:var(--text);margin-top:10px}
+.notice{font-size:12px;color:var(--muted);line-height:1.5;margin:12px 2px 0}
+.warning{display:none;border:1px solid #b45309;background:#3b2a17;color:#fcd9a5;padding:12px;border-radius:10px;margin-top:12px;font-size:13px}
+.footer{font-size:11px;color:var(--muted);text-align:center;margin:20px 0}
+@media(max-width:360px){.grid,.results{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+<h1>🟡 XAUUSD Lot & Risk Calculator</h1>
+<p>Kalkulasi lot, SL/TP pips, Nett SL dan Nett TP.</p>
+</div>
+<div class="card">
+<div class="grid">
+<div><label>Balance (USD)</label><input id="balance" type="number" step="any" value="1000"></div>
+<div><label>Type</label><select id="side"><option>BUY</option><option>SELL</option></select></div>
+<div><label>Open Price</label><input id="entry" type="number" step="any" placeholder="Contoh: 4050.000"></div>
+<div><label>SL Price</label><input id="sl" type="number" step="any" placeholder="Contoh: 4060.000"></div>
+<div><label>TP Price</label><input id="tp" type="number" step="any" placeholder="Contoh: 4030.000"></div>
+<div><label>Risk (%)</label><input id="risk" type="number" step="any" value="0.5"></div>
+</div>
+<button id="calc" style="margin-top:14px">HITUNG</button>
+<button id="reset" class="secondary">RESET</button>
+<div id="warning" class="warning"></div>
+</div>
+<div class="card">
+<h3 style="margin:0 0 12px">Hasil Perhitungan</h3>
+<div class="results">
+<div class="result"><div class="label">SL Pips</div><div class="value" id="slp">—</div></div>
+<div class="result"><div class="label">TP Pips</div><div class="value" id="tpp">—</div></div>
+<div class="result"><div class="label">Lot</div><div class="value green" id="lot">—</div></div>
+<div class="result"><div class="label">Risk Nominal</div><div class="value" id="riskmoney">—</div></div>
+<div class="result"><div class="label">Nett SL</div><div class="value red" id="nettsl">—</div></div>
+<div class="result"><div class="label">Nett TP</div><div class="value green" id="netttp">—</div></div>
+<div class="result full"><div class="label">Risk : Reward</div><div class="value" id="rr">—</div></div>
+</div>
+<p class="notice">Asumsi: XAUUSD, kontrak 1 lot = 100 oz, 1 pip = 0,01, akun USD. Lot dibulatkan ke bawah 0,01 agar risiko tidak melebihi target. Hasil belum memasukkan komisi, swap, atau slippage. Pastikan spesifikasi kontrak broker Anda sesuai.</p>
+</div>
+<div class="footer">PATIENCE • DISCIPLINE • PERSISTENCE</div>
+</main>
+<script>
+const ids=['balance','side','entry','sl','tp','risk'];
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calculate(){
+ const b=+$('balance').value,e=+$('entry').value,s=+$('sl').value,t=+$('tp').value,r=+$('risk').value,side=$('side').value;
+ const warning=$('warning');warning.style.display='none';
+ if(!(b>0&&e>0&&s>0&&t>0&&r>0)){warning.textContent='Isi semua nilai dengan angka lebih dari 0.';warning.style.display='block';return}
+ const correct=side==='BUY'?(s<e&&t>e):(s>e&&t<e);
+ if(!correct){warning.textContent=side==='BUY'?'BUY: SL seharusnya di bawah Entry dan TP di atas Entry.':'SELL: SL seharusnya di atas Entry dan TP di bawah Entry.';warning.style.display='block'}
+ const slDist=Math.abs(e-s),tpDist=side==='BUY'?t-e:e-t;
+ const riskMoney=b*r/100,rawLot=riskMoney/(slDist*100),lot=Math.floor((rawLot+1e-10)*100)/100;
+ const slp=slDist/0.01,tpp=tpDist/0.01,loss=lot*slDist*100,profit=lot*tpDist*100;
+ $('slp').textContent=fmt(slp);$('tpp').textContent=fmt(tpp);$('lot').textContent=lot.toFixed(2);
+ $('riskmoney').textContent='$'+fmt(riskMoney);$('nettsl').textContent='-$'+fmt(loss);$('netttp').textContent=(profit>=0?'+':'-')+'$'+fmt(Math.abs(profit));
+ $('rr').textContent=loss>0?'1 : '+fmt(Math.abs(profit)/loss):'—';
+}
+$('calc').addEventListener('click',calculate);
+$('reset').addEventListener('click',()=>{ $('balance').value='1000';$('side').value='BUY';$('entry').value='';$('sl').value='';$('tp').value='';$('risk').value='0.5';['slp','tpp','lot','riskmoney','nettsl','netttp','rr'].forEach(id=>$(id).textContent='—');$('warning').style.display='none';});
+ids.forEach(id=>$(id).addEventListener('input',()=>{if($('entry').value&&$('sl').value&&$('tp').value)calculate()}));
+</script>
+</body>
+</html>
